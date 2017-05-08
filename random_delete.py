@@ -15,7 +15,7 @@ def count_edge_num(edges, num_vertice):
   ret=[0 for _ in xrange(num_vertice)]
   for edge in edges:
     ret[edge.v1]+=1
-    ret[edge.v2]+=2
+    ret[edge.v2]+=1
   return ret
 
 if __name__=='__main__':

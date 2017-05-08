@@ -5,25 +5,13 @@ import sys
 from edge import Edge
 
 def accuracy(num_lost, predicted, losted):
-  num_vertice = len(num_lost)
   print 'Calculating accuracy...'
-  parray=[{} for _ in xrange(num_vertice)]
-  def add_to_parray(vi, val):
-    # only use top k edges
-    if len(parray[vi]) >= num_lost[vi]:
-      return
-    parray[vi][val]=True
-  for edge in predicted:
-    add_to_parray(edge.v1, edge.hash_val)
-    add_to_parray(edge.v2, edge.hash_val)
   correct=0
-  for edge in losted:
-    if edge.hash_val in parray[edge.v1]:
-      correct+=1
-    if edge.hash_val in parray[edge.v2]:
-      correct+=1
+  for edge in predicted:
+    if edge in losted:
+      correct+=2
   acc = float(correct) / sum(num_lost)
-  print 'Accuracy: %s'%acc
+  print 'Correct %d/%d, Accuracy: %s'%(correct, sum(num_lost), acc)
   return acc
 
 def load_edges(fname):
@@ -33,7 +21,7 @@ def load_edges(fname):
       ps=line.rstrip().split()
       edge=Edge(ps[0], ps[1])
       edges[edge.hash_val]=edge
-  return edges.values()
+  return edges
 
 def get_num_lost(edges_num_file):
   print 'Getting edges lost number...'

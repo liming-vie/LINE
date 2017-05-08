@@ -20,17 +20,18 @@ run() {
 original_graph_file=../data/edges_remove-20%.txt
 edges_num_file=../data/edge_num.txt
 checkin_file=../data/totalCheckins.txt
-result_file=result
+result_file=result_with_checkin
 
 # checkin embedding
 output_dir=../output
 checkin_graph=$output_dir/checkin_graph
 checkin_embedding=checkin_embedding.bin
-#python checkin_graph.py $checkin_file $checkin_graph
+python checkin_graph.py $checkin_file $checkin_graph
 sh train_embedding.sh $checkin_graph $output_dir $checkin_embedding 500 64
+checkin_embedding=$output_dir/$checkin_embedding
 
 # A/B test
-echo '==================== A/B test ====================\n'
+echo '==================== A/B test ===================='
 output_dir=../output/ab_test
 graph_file=$output_dir/sub_graph
 losted_file=$output_dir/deleted_graph
@@ -40,6 +41,6 @@ run $graph_file $edge_file $checkin_embedding $output_dir $result_file
 python accuracy.py $edge_file $output_dir/$result_file $losted_file
 
 # output result
-echo '==================== get result ====================\n'
+echo '==================== get result ===================='
 output_dir=../output/total
 run $original_graph_file $edges_num_file $checkin_embedding $output_dir $result_file
