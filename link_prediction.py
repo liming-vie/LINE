@@ -28,9 +28,9 @@ class PredictThread(threading.Thread):
     ret={}
     for i in xrange(self.bi, self.ei):
       si=str(i)
-      if si not in embedding:
+      if si not in self.embedding:
         continue
-      idxs, scores = self.embedding.cosine(si, n=self.num_lost[i]*20)
+      idxs, scores = self.embedding.cosine(si, n=self.num_lost[i])
       for idx, score in zip(idxs, scores):
         idx = self.embedding.vocab[idx]
         edge=Edge(i, idx, score)
@@ -77,8 +77,7 @@ def predict(embedding, num_lost, num_vertice):
   def get_result(ret, t):
     t.join()
     for edge in t.get_result():
-      if edge.hash_val not in ret:
-        ret[edge.hash_val] = edge
+      ret[edge.hash_val] = edge
 
   for i in tqdm(xrange(0, num_vertice, predict_per_thread)):
     if len(pool)==thread_num:
