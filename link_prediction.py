@@ -10,7 +10,13 @@ from tqdm import tqdm
 
 
 class PredictThread(threading.Thread):
+  """ Predict Thread
+  Thread class for predict most possible edges with cosine metric
+  """
   def __init__(self, num_lost, embedding, num_vertice, bi, ei):
+    """
+    Predict for edge [bi, ei) with needed number of edges num_lost[]
+    """
     threading.Thread.__init__(self)
     self.num_lost = num_lost
     self.embedding=embedding
@@ -64,20 +70,22 @@ def predict(embedding, num_lost, num_vertice):
   print 'Predicting...'
   ret={}
   pool=[]
+  thread_num=25
+  predict_per_thread=100
 
+  # get result from thread t
   def get_result(ret, t):
     t.join()
     for edge in t.get_result():
       if edge.hash_val not in ret:
         ret[edge.hash_val] = edge
 
-  thread_num=25
-  predict_per_thread=100
   for i in tqdm(xrange(0, num_vertice, predict_per_thread)):
     if len(pool)==thread_num:
       get_result(ret, pool[0])
       pool=pool[1:]
-    pool.append(PredictThread(num_lost, embedding, num_vertice, i, i+predict_per_thread))
+    pool.append(PredictThread(num_lost, embedding, num_vertice, \
+            i, i+predict_per_thread))
     pool[-1].start()
   l=len(pool)
   for i in xrange(l):
@@ -86,7 +94,8 @@ def predict(embedding, num_lost, num_vertice):
 
   print 'Sorting predicted edges...'
   ret = sorted(ret.values(), key=lambda edge:edge.score, reverse=True)
-  return ret[:sum(num_lost)]
+  needed = sum(num_lost) / 2
+  return ret[:needed]
 
 
 def get_num_lost(edges_num_file):

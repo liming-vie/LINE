@@ -1,4 +1,3 @@
 # Link Prediction
 
-# Use only graph
-A/B test: 
+Link prediction using cosine similarity based on graph embedding, LINE algorithm.

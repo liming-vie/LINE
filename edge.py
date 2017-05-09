@@ -2,6 +2,11 @@
 # encoding: utf-8
 
 class Edge:
+  """ Edge
+  v1, v2: vertice index connecting to this edge, always let v1<v2
+  hash_val: hash value for this edge, only care about v1 and v2
+  score: edge weight or score
+  """
   def __init__(self, v1, v2, s=0.):
     v1, v2=[int(v1), int(v2)]
     if v1>v2:
