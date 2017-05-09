@@ -10,10 +10,11 @@ from tqdm import tqdm
 
 
 class PredictThread(threading.Thread):
-  def __init__(self, embedding, num_lost, num_vertice, bi, ei):
+  def __init__(self, num_lost, embedding, num_vertice, bi, ei):
     threading.Thread.__init__(self)
+    self.num_lost = num_lost
     self.embedding=embedding
-    self.num_lost=num_lost
+    self.num_vertice = num_vertice
     self.bi=bi
     self.ei=min(ei, num_vertice)
 
@@ -23,12 +24,11 @@ class PredictThread(threading.Thread):
       si=str(i)
       if si not in embedding:
         continue
-      idxs, scores = self.embedding.cosine(si, n=500)
+      idxs, scores = self.embedding.cosine(si, n=self.num_lost[i]*20)
       for idx, score in zip(idxs, scores):
         idx = self.embedding.vocab[idx]
         edge=Edge(i, idx, score)
-        if edge.hash_val not in ret:
-          ret[edge.hash_val] = edge
+        ret[edge.hash_val] = edge
     self.result=ret.values()
 
   def get_result(self):
@@ -65,35 +65,28 @@ def predict(embedding, num_lost, num_vertice):
   ret={}
   pool=[]
 
-  def get_result(ret, pool):
-    for t in pool:
-      t.join()
-      for edge in t.get_result():
-        if edge.hash_val not in ret:
-          ret[edge.hash_val] = edge
+  def get_result(ret, t):
+    t.join()
+    for edge in t.get_result():
+      if edge.hash_val not in ret:
+        ret[edge.hash_val] = edge
 
   thread_num=25
   predict_per_thread=100
   for i in tqdm(xrange(0, num_vertice, predict_per_thread)):
     if len(pool)==thread_num:
-      get_result(ret, pool)
-      pool=[]
-    pool.append(PredictThread(embedding, num_lost, num_vertice, i, i+predict_per_thread))
+      get_result(ret, pool[0])
+      pool=pool[1:]
+    pool.append(PredictThread(num_lost, embedding, num_vertice, i, i+predict_per_thread))
     pool[-1].start()
-  get_result(ret, pool)
+  l=len(pool)
+  for i in xrange(l):
+    get_result(ret, pool[i])
+  del pool
 
   print 'Sorting predicted edges...'
-  edges = sorted(ret.values(), key=lambda edge:edge.score, reverse=True)
-  print 'Removing unnecessary edges...'
-  num_edges=[0 for _ in xrange(num_vertice)]
-  ret=[]
-  for edge in tqdm(edges):
-    if num_edges[edge.v1] < num_lost[edge.v1] and \
-        num_edges[edge.v2] < num_lost[edge.v2]:
-      ret.append(edge)
-      num_edges[edge.v1]+=1
-      num_edges[edge.v2]+=1
-  return ret
+  ret = sorted(ret.values(), key=lambda edge:edge.score, reverse=True)
+  return ret[:sum(num_lost)]
 
 
 def get_num_lost(edges_num_file):
@@ -109,7 +102,7 @@ def get_num_lost(edges_num_file):
 def save_edges(edges, foutput):
   print 'Saving edges in file %s'%foutput
   with open(foutput, 'w') as fout:
-    for edge in edges:
+    for edge in tqdm(edges):
       fout.write("%d\t%d\n"%(edge.v1, edge.v2))
 
 
